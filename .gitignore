@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Local database
+data/*.db
+
+# Downloaded media
+data/downloads/*
+data/artwork/*
+data/playlists/*
+
+# IDE
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
