@@ -1264,3 +1264,172 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSelectionUI();
 
 });
+
+// ==========================================
+// 15. DOWNLOAD HISTORY
+// ==========================================
+
+const libraryGrid = document.getElementById("library-grid");
+const libraryTotalSongs = document.getElementById("library-total-songs");
+const libraryTotalStorage = document.getElementById("library-total-storage");
+const librarySearch = document.getElementById("library-search");
+const librarySongCount = document.getElementById("library-song-count");
+
+let downloadedSongs = [];
+
+function formatBytes(bytes) {
+    const value = Number(bytes) || 0;
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function formatDownloadDate(value) {
+    if (!value) return "Date unavailable";
+    const date = new Date(String(value).replace(" ", "T"));
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function createLibraryElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined && text !== null) element.textContent = text;
+    return element;
+}
+
+async function loadLibrary() {
+    if (!libraryGrid) return;
+
+    libraryGrid.innerHTML = "";
+    libraryGrid.appendChild(createLibraryElement("p", "library-loading", "Loading download history…"));
+
+    try {
+        const [libraryResponse, statsResponse] = await Promise.all([
+            fetch("/api/library", { cache: "no-store" }),
+            fetch("/api/library/stats", { cache: "no-store" })
+        ]);
+
+        const libraryData = await libraryResponse.json();
+        const statsData = await statsResponse.json();
+
+        if (!libraryResponse.ok || !libraryData.success) {
+            throw new Error(libraryData.error || "Could not load download history.");
+        }
+        if (!statsResponse.ok || !statsData.success) {
+            throw new Error(statsData.error || "Could not load library statistics.");
+        }
+
+        downloadedSongs = Array.isArray(libraryData.songs) ? libraryData.songs : [];
+
+        if (libraryTotalSongs) {
+            libraryTotalSongs.textContent = statsData.total_songs ?? downloadedSongs.length;
+        }
+        if (libraryTotalStorage) {
+            libraryTotalStorage.textContent = formatBytes(statsData.total_storage_bytes);
+        }
+
+        renderLibrary(downloadedSongs);
+    } catch (error) {
+        console.error("Download history error:", error);
+        libraryGrid.innerHTML = "";
+        libraryGrid.appendChild(createLibraryElement("p", "library-error", error.message));
+    }
+}
+
+function renderLibrary(songs) {
+    if (!libraryGrid) return;
+
+    libraryGrid.innerHTML = "";
+    if (librarySongCount) {
+        librarySongCount.textContent = `${songs.length} ${songs.length === 1 ? "download" : "downloads"}`;
+    }
+
+    if (!songs.length) {
+        const empty = createLibraryElement("div", "library-empty");
+        empty.appendChild(createLibraryElement("h3", "", "No downloads found"));
+        empty.appendChild(createLibraryElement("p", "", "Your downloaded songs will appear here."));
+        libraryGrid.appendChild(empty);
+        return;
+    }
+
+    songs.forEach(song => {
+        const card = createLibraryElement("article", "library-card");
+        const artwork = createLibraryElement("img");
+        artwork.src = song.thumbnail || "/static/images/Vinyl.png";
+        artwork.alt = `${song.title || "Song"} artwork`;
+        artwork.loading = "lazy";
+        artwork.onerror = () => {
+            artwork.onerror = null;
+            artwork.src = "/static/images/Vinyl.png";
+        };
+
+        const info = createLibraryElement("div", "library-card-info");
+        info.appendChild(createLibraryElement("h4", "", song.title || "Unknown Track"));
+        info.appendChild(createLibraryElement("p", "", song.artist || "Unknown Artist"));
+
+        const meta = createLibraryElement("div", "library-meta");
+        meta.appendChild(createLibraryElement("span", "", "MP3"));
+        meta.appendChild(createLibraryElement("span", "", formatBytes(song.file_size)));
+        meta.appendChild(createLibraryElement("span", "", formatDownloadDate(song.downloaded_at)));
+        info.appendChild(meta);
+
+        const actions = createLibraryElement("div", "library-actions");
+        const downloadButton = createLibraryElement("button", "library-download-btn", "↓ Download");
+        downloadButton.type = "button";
+        downloadButton.addEventListener("click", () => downloadExistingSong(song.id));
+
+        const deleteButton = createLibraryElement("button", "library-delete-btn", "Delete");
+        deleteButton.type = "button";
+        deleteButton.addEventListener("click", () => deleteLibrarySong(song.id));
+
+        actions.append(downloadButton, deleteButton);
+        card.append(artwork, info, actions);
+        libraryGrid.appendChild(card);
+    });
+}
+
+function downloadExistingSong(songId) {
+    // The Flask server sends the existing local file to this browser.
+    window.location.assign(`/api/library/${encodeURIComponent(songId)}/file`);
+}
+
+async function deleteLibrarySong(songId) {
+    const confirmed = window.confirm("Delete this download and its audio file from this computer?");
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/library/${encodeURIComponent(songId)}`, {
+            method: "DELETE"
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || "Could not delete this download.");
+        }
+        showToast("Download and file deleted.");
+        await loadLibrary();
+    } catch (error) {
+        console.error("Delete download error:", error);
+        showToast(error.message || "Delete failed.");
+    }
+}
+
+if (librarySearch) {
+    librarySearch.addEventListener("input", () => {
+        const query = librarySearch.value.trim().toLowerCase();
+        const filtered = downloadedSongs.filter(song =>
+            `${song.title || ""} ${song.artist || ""}`.toLowerCase().includes(query)
+        );
+        renderLibrary(filtered);
+    });
+}
+
+// Refresh button in the Download History section calls this function.
+// Load once on startup as well as whenever the user refreshes the section.
+document.addEventListener("DOMContentLoaded", loadLibrary);

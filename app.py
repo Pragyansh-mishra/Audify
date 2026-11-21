@@ -1,5 +1,5 @@
 import os
-
+from backend.database.db import initialize_database
 from flask import Flask, render_template, jsonify, url_for
 
 from backend.routes.health import health_bp
@@ -12,6 +12,7 @@ app = Flask(
     template_folder="frontend/templates",
     static_folder="frontend/static"
 )
+initialize_database()
 
 
 # Register backend routes (each blueprint exactly once)
@@ -49,6 +50,4 @@ def get_covers():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
-
-
+    app.run(host="0.0.0.0", port=5000, debug=True)

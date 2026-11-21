@@ -51,6 +51,7 @@
                 <a href="#home" class="nav-link active">Home</a>
                 <a href="#features" class="nav-link">Features</a>
                 <a href="#collection" class="nav-link">Collection</a>
+                <a href="#library" class="nav-link">Download History</a>
                 <a href="#about" class="nav-link">About</a>
 
             </div>
@@ -59,7 +60,7 @@
 
         <div class="nav-right">
 
-            <a href="https://github.com"
+            <a href="https://github.com/Pragyansh-mishra/Audify"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="nav-icon-link"
@@ -116,7 +117,7 @@
 
 
             <div class="hero-title">
-                <h1>AUDIFY</h1>
+                <h1></h1>
             </div>
 
 
@@ -376,6 +377,50 @@
 
         </section>
 
+
+
+        <!-- ================= DOWNLOAD HISTORY ================= -->
+
+        <section class="library-section" id="library">
+
+            <div class="library-header">
+                <div>
+                    <span class="playlist-badge">YOUR DOWNLOADS</span>
+                    <h2>DOWNLOAD HISTORY</h2>
+                    <p>Your downloaded music, all in one place.</p>
+                </div>
+
+                <button type="button" class="btn-playlist-action" onclick="loadLibrary()">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="library-stats">
+                <div class="library-stat-card">
+                    <span>TOTAL DOWNLOADS</span>
+                    <h3 id="library-total-songs">0</h3>
+                </div>
+
+                <div class="library-stat-card">
+                    <span>STORAGE USED</span>
+                    <h3 id="library-total-storage">0 MB</h3>
+                </div>
+            </div>
+
+            <div class="library-toolbar">
+                <input
+                    type="search"
+                    id="library-search"
+                    placeholder="Search download history..."
+                    aria-label="Search download history">
+                <span id="library-song-count">0 downloads</span>
+            </div>
+
+            <div class="library-grid" id="library-grid" aria-live="polite">
+                <p>Loading download history...</p>
+            </div>
+
+        </section>
 
 
         <!-- ================= FEATURES ================= -->
@@ -659,7 +704,7 @@
 
                 <a href="#features">Features</a>
 
-                <a href="https://github.com"
+                <a href="https://github.com/Pragyansh-mishra/Audify"
                     target="_blank"
                     rel="noopener noreferrer">
                     GitHub
