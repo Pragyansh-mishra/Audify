@@ -8,7 +8,12 @@ history.
 > **Version:** V2\
 > **Status:** Local development version. The app runs on your own
 > computer; it is not currently hosted as a public web service.
+## Preview
 
+![Audify Banner](assets/audify-banner.png)
+
+### Homepage
+![Homepage](assets/homepage.png)
 ## Features
 
 -   Import a supported song URL or playlist URL.
